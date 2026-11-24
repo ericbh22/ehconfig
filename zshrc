@@ -1,59 +1,47 @@
-# COMPLETION_WAITING_DOTS="true"
+# Interactive shell preferences. Machine-specific additions belong in ~/.zshrc.local.
+typeset -U path PATH
+if ! command -v brew >/dev/null 2>&1; then
+  for _eh_brew in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+    if [[ -x "$_eh_brew" ]]; then
+      eval "$("$_eh_brew" shellenv)"
+      break
+    fi
+  done
+  unset _eh_brew
+fi
 
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
+export ZSH="$HOME/.oh-my-zsh"
+plugins=(git)
+[[ -r "$ZSH/oh-my-zsh.sh" ]] && source "$ZSH/oh-my-zsh.sh"
 
-# Uncomment the following line if you want to change the command execution time
-# stamp shown in the history command output.
-# You can set one of the optional three formats:
-# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
-# or set a custom format using the strftime function format specifications,
-# see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
+# Homebrew owns these plugin copies; no custom-plugin clones are needed.
+_eh_prefix="${HOMEBREW_PREFIX:-}"
+if [[ -n "$_eh_prefix" && -r "$_eh_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+  source "$_eh_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+fi
+for _eh_dir in "$HOME/.local/bin" "$HOME/.ghcup/bin" "$HOME/.splashkit"; do
+  [[ -d "$_eh_dir" ]] && path=("$_eh_dir" $path)
+done
+[[ -r "$HOME/.ghcup/env" ]] && source "$HOME/.ghcup/env"
 
-# Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
+# Preserve Conda integration when Conda is installed separately.
+for _eh_conda in /opt/anaconda3/bin/conda "$HOME/anaconda3/bin/conda" "$HOME/miniconda3/bin/conda"; do
+  if [[ -x "$_eh_conda" ]]; then
+    if _eh_conda_hook="$("$_eh_conda" shell.zsh hook 2>/dev/null)"; then
+      eval "$_eh_conda_hook"
+    fi
+    break
+  fi
+done
+command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 
-# Which plugins would you like to load?
-# Standard plugins can be found in $ZSH/plugins/
-# Custom plugins may be added to $ZSH_CUSTOM/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+# The old eza alias is intentionally disabled, matching the current Mac.
+# alias ls='eza --icons=always --group-directories-first --long --git --no-user --header --no-permissions'
+[[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 
-source $ZSH/oh-my-zsh.sh
-
-# User configuration
-
-# export MANPATH="/usr/local/man:$MANPATH"
-
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
-
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='nvim'
-# fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch $(uname -m)"
-
-# Set personal aliases, overriding those provided by Oh My Zsh libs,
-# plugins, and themes. Aliases can be placed here, though Oh My Zsh
-# users are encouraged to define aliases within a top-level file in
-# the $ZSH_CUSTOM folder, with .zsh extension. Examples:
-# - $ZSH_CUSTOM/aliases.zsh
-# - $ZSH_CUSTOM/macos.zsh
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
-eval "$(starship init zsh)"
-alias ls="eza --icons=always --group-directories-first --long --git --no-user --header -l --no-permissions"
-
-".zshrc" 107L, 4165B                                                                     107,0-1       Bot
+# Keep syntax highlighting after other widget/plugin setup.
+if [[ -n "$_eh_prefix" && -r "$_eh_prefix/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+  source "$_eh_prefix/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+unset _eh_prefix _eh_dir _eh_conda _eh_conda_hook
